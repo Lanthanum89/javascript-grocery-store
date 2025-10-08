@@ -1,0 +1,6 @@
+body { font-family: Arial, sans-serif; margin: 2em; background: #f8f8f8; }
+h1, h2 { color: #2c3e50; }
+#catalog, #cart { background: #fff; padding: 1em; margin-bottom: 2em; border-radius: 8px; box-shadow: 0 2px 8px #eee; }
+.product, .cart-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1em; }
+button { background: #27ae60; color: #fff; border: none; padding: 0.5em 1em; border-radius: 4px; cursor: pointer; }
+button.remove { background: #c0392b; }
