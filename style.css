@@ -351,6 +351,21 @@ button:disabled {
   font-size: 0.9em;
 }
 
+/* Container for centered content */
+.container {
+  max-width: 860px;   /* tweak to 720px/960px if you want narrower/wider */
+  margin: 0 auto;     /* centers the content */
+}
+
+/* Optional: slightly reduce spacing further for compactness on large screens */
+@media (min-width: 1200px) {
+  .controls, #catalog, #cart, #orderHistory, #wishlist {
+    padding: 0.7em;
+  }
+  h1 { margin-bottom: 1.2em; }
+  h2 { margin: 0.9em 0 0.6em; }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   body {

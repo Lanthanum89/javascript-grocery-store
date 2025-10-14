@@ -1,16 +1,16 @@
 const products = [
-  { id: 1, name: 'Apples', price: 1.5, category: 'Fruits', stock: 15, description: 'Fresh red apples', rating: 4.5, reviews: 23 },
-  { id: 2, name: 'Bananas', price: 1.2, category: 'Fruits', stock: 20, description: 'Ripe yellow bananas', rating: 4.2, reviews: 18 },
-  { id: 3, name: 'Carrots', price: 0.9, category: 'Vegetables', stock: 12, description: 'Organic carrots', rating: 4.0, reviews: 15 },
-  { id: 4, name: 'Bread', price: 2.5, category: 'Bakery', stock: 8, description: 'Whole wheat bread', rating: 4.3, reviews: 31 },
-  { id: 5, name: 'Milk', price: 1.8, category: 'Dairy', stock: 10, description: 'Fresh whole milk', rating: 4.4, reviews: 27 },
-  { id: 6, name: 'Oranges', price: 2.0, category: 'Fruits', stock: 18, description: 'Juicy oranges', rating: 4.1, reviews: 12 },
-  { id: 7, name: 'Broccoli', price: 1.6, category: 'Vegetables', stock: 14, description: 'Fresh broccoli', rating: 3.9, reviews: 8 },
-  { id: 8, name: 'Cheese', price: 3.5, category: 'Dairy', stock: 6, description: 'Sharp cheddar cheese', rating: 4.6, reviews: 42 },
-  { id: 9, name: 'Croissants', price: 4.0, category: 'Bakery', stock: 5, description: 'Buttery croissants', rating: 4.7, reviews: 35 },
-  { id: 10, name: 'Strawberries', price: 3.2, category: 'Fruits', stock: 9, description: 'Sweet strawberries', rating: 4.5, reviews: 19 },
-  { id: 11, name: 'Yogurt', price: 1.1, category: 'Dairy', stock: 16, description: 'Greek yogurt', rating: 4.2, reviews: 22 },
-  { id: 12, name: 'Lettuce', price: 1.3, category: 'Vegetables', stock: 11, description: 'Crisp lettuce', rating: 3.8, reviews: 9 }
+  { id: 1, name: 'Apples', price: 1.20, category: 'Fruits', stock: 15, description: 'Fresh red apples', rating: 4.5, reviews: 23 },
+  { id: 2, name: 'Bananas', price: 0.95, category: 'Fruits', stock: 20, description: 'Ripe yellow bananas', rating: 4.2, reviews: 18 },
+  { id: 3, name: 'Carrots', price: 0.70, category: 'Vegetables', stock: 12, description: 'Organic carrots', rating: 4.0, reviews: 15 },
+  { id: 4, name: 'Bread', price: 2.00, category: 'Bakery', stock: 8, description: 'Whole wheat bread', rating: 4.3, reviews: 31 },
+  { id: 5, name: 'Milk', price: 1.45, category: 'Dairy', stock: 10, description: 'Fresh whole milk', rating: 4.4, reviews: 27 },
+  { id: 6, name: 'Oranges', price: 1.60, category: 'Fruits', stock: 18, description: 'Juicy oranges', rating: 4.1, reviews: 12 },
+  { id: 7, name: 'Broccoli', price: 1.30, category: 'Vegetables', stock: 14, description: 'Fresh broccoli', rating: 3.9, reviews: 8 },
+  { id: 8, name: 'Cheese', price: 2.80, category: 'Dairy', stock: 6, description: 'Sharp cheddar cheese', rating: 4.6, reviews: 42 },
+  { id: 9, name: 'Croissants', price: 3.20, category: 'Bakery', stock: 5, description: 'Buttery croissants', rating: 4.7, reviews: 35 },
+  { id: 10, name: 'Strawberries', price: 2.55, category: 'Fruits', stock: 9, description: 'Sweet strawberries', rating: 4.5, reviews: 19 },
+  { id: 11, name: 'Yogurt', price: 0.85, category: 'Dairy', stock: 16, description: 'Greek yogurt', rating: 4.2, reviews: 22 },
+  { id: 12, name: 'Lettuce', price: 1.05, category: 'Vegetables', stock: 11, description: 'Crisp lettuce', rating: 3.8, reviews: 9 }
 ];
 
 let cart = JSON.parse(localStorage.getItem('groceryCart')) || [];
@@ -21,20 +21,20 @@ let searchTerm = '';
 let sortBy = 'name';
 let showOnlyInStock = false;
 
-// Discount codes with expiry dates
+// Discount codes with expiry dates (minimum orders adjusted for GBP)
 const discountCodes = {
   'SAVE10': { discount: 0.10, expiry: '2025-12-31', minOrder: 0 },
-  'WELCOME': { discount: 0.15, expiry: '2025-11-30', minOrder: 10 },
-  'FRUIT20': { discount: 0.20, expiry: '2025-10-31', minOrder: 15 },
-  'BULK25': { discount: 0.25, expiry: '2025-12-25', minOrder: 50 }
+  'WELCOME': { discount: 0.15, expiry: '2025-11-30', minOrder: 8 },
+  'FRUIT20': { discount: 0.20, expiry: '2025-10-31', minOrder: 12 },
+  'BULK25': { discount: 0.25, expiry: '2025-12-25', minOrder: 40 }
 };
 
 let appliedDiscount = 0;
 let currentDiscountCode = '';
 
-// User preferences
+// User preferences updated to GBP
 let userPreferences = JSON.parse(localStorage.getItem('userPreferences')) || {
-  currency: 'USD',
+  currency: 'GBP',
   theme: 'pink',
   notifications: true
 };
@@ -82,6 +82,10 @@ function getStarRating(rating) {
     }
   }
   return starHTML;
+}
+
+function formatPrice(price) {
+  return `£${price.toFixed(2)}`;
 }
 
 function sortProducts(products) {
@@ -141,7 +145,7 @@ function renderCatalog() {
           <span class="stars">${getStarRating(product.rating)}</span>
           <span class="rating-text">${product.rating} (${product.reviews} reviews)</span>
         </div>
-        <span class="product-price">$${product.price.toFixed(2)}</span>
+        <span class="product-price">${formatPrice(product.price)}</span>
         <span class="product-stock ${product.stock <= 5 ? 'low-stock' : ''}">
           Stock: ${product.stock} ${product.stock <= 5 && product.stock > 0 ? '⚠️' : ''}
         </span>
@@ -207,7 +211,7 @@ function renderCart() {
       <div class="cart-item-info">
         <span class="item-name">${item.name}</span>
         <span class="item-description">${item.description}</span>
-        <span class="item-price">$${item.price.toFixed(2)} each</span>
+        <span class="item-price">${formatPrice(item.price)} each</span>
       </div>
       <div class="quantity-controls">
         <button onclick="decreaseQuantity(${item.id})" class="qty-btn">-</button>
@@ -215,7 +219,7 @@ function renderCart() {
         <button onclick="increaseQuantity(${item.id})" class="qty-btn">+</button>
       </div>
       <div class="item-total">
-        <span>$${(item.price * item.qty).toFixed(2)}</span>
+        <span>${formatPrice(item.price * item.qty)}</span>
         <button class="remove" onclick="removeFromCart(${item.id})">Remove</button>
         <button class="move-to-wishlist" onclick="moveToWishlist(${item.id})">♡ Wishlist</button>
       </div>
@@ -223,11 +227,11 @@ function renderCart() {
     cartDiv.appendChild(div);
   });
 
-  // Cart summary with enhanced features
+  // Cart summary with enhanced features (adjusted for UK shipping)
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   const discountAmount = subtotal * appliedDiscount;
-  const shipping = subtotal >= 25 ? 0 : 4.99;
-  const tax = (subtotal - discountAmount) * 0.08;
+  const shipping = subtotal >= 20 ? 0 : 3.99; // Free shipping over £20
+  const tax = (subtotal - discountAmount) * 0.20; // UK VAT is 20%
   const total = subtotal - discountAmount + shipping + tax;
   
   const summaryDiv = document.createElement('div');
@@ -242,16 +246,16 @@ function renderCart() {
       <small>Available codes: SAVE10, WELCOME, FRUIT20, BULK25</small>
     </div>
     <div class="totals">
-      <div class="subtotal">Subtotal: $${subtotal.toFixed(2)}</div>
-      ${appliedDiscount > 0 ? `<div class="discount">Discount (${currentDiscountCode}): -$${discountAmount.toFixed(2)}</div>` : ''}
-      <div class="shipping">Shipping: ${shipping === 0 ? 'FREE' : '$' + shipping.toFixed(2)} ${subtotal < 25 ? '(Free over $25)' : ''}</div>
-      <div class="tax">Tax (8%): $${tax.toFixed(2)}</div>
-      <div class="total"><strong>Total: $${total.toFixed(2)}</strong></div>
+      <div class="subtotal">Subtotal: ${formatPrice(subtotal)}</div>
+      ${appliedDiscount > 0 ? `<div class="discount">Discount (${currentDiscountCode}): -${formatPrice(discountAmount)}</div>` : ''}
+      <div class="shipping">Shipping: ${shipping === 0 ? 'FREE' : formatPrice(shipping)} ${subtotal < 20 ? '(Free over £20)' : ''}</div>
+      <div class="tax">VAT (20%): ${formatPrice(tax)}</div>
+      <div class="total"><strong>Total: ${formatPrice(total)}</strong></div>
     </div>
     <div class="cart-actions">
       <button onclick="saveForLater()" class="save-btn">Save for Later</button>
       <button onclick="clearCart()" class="clear-btn">Clear Cart</button>
-      <button onclick="checkout()" class="checkout-btn">Checkout ($${total.toFixed(2)})</button>
+      <button onclick="checkout()" class="checkout-btn">Checkout (${formatPrice(total)})</button>
     </div>
   `;
   cartDiv.appendChild(summaryDiv);
@@ -269,7 +273,7 @@ function renderWishlist() {
     const div = document.createElement('div');
     div.className = 'wishlist-item';
     div.innerHTML = `
-      <span>${item.name} - $${item.price.toFixed(2)}</span>
+      <span>${item.name} - ${formatPrice(item.price)}</span>
       <div>
         <button onclick="moveToCart(${item.id})">Add to Cart</button>
         <button onclick="removeFromWishlist(${item.id})" class="remove">Remove</button>
@@ -309,7 +313,7 @@ function quickView(id) {
         <span class="stars">${getStarRating(product.rating)}</span>
         <span>${product.rating} (${product.reviews} reviews)</span>
       </div>
-      <p class="price">$${product.price.toFixed(2)}</p>
+      <p class="price">${formatPrice(product.price)}</p>
       <p class="stock">Stock: ${product.stock}</p>
       <div class="modal-actions">
         <button onclick="addToCart(${product.id}); closeModal()">Add to Cart</button>
@@ -424,7 +428,7 @@ window.applyDiscount = function() {
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   
   if (subtotal < discountInfo.minOrder) {
-    showNotification(`Minimum order of $${discountInfo.minOrder} required for this code!`, 'error');
+    showNotification(`Minimum order of £${discountInfo.minOrder} required for this code!`, 'error');
     return;
   }
   
@@ -546,8 +550,8 @@ window.checkout = function() {
   
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   const discountAmount = subtotal * appliedDiscount;
-  const shipping = subtotal >= 25 ? 0 : 4.99;
-  const tax = (subtotal - discountAmount) * 0.08;
+  const shipping = subtotal >= 20 ? 0 : 3.99; // Free shipping over £20
+  const tax = (subtotal - discountAmount) * 0.20; // UK VAT 20%
   const total = subtotal - discountAmount + shipping + tax;
   
   const order = {
@@ -564,7 +568,7 @@ window.checkout = function() {
   orderHistory.push(order);
   localStorage.setItem('orderHistory', JSON.stringify(orderHistory));
   
-  showNotification(`Order placed successfully! Total: $${total.toFixed(2)}`, 'success');
+  showNotification(`Order placed successfully! Total: ${formatPrice(total)}`, 'success');
   
   cart = [];
   appliedDiscount = 0;
@@ -606,12 +610,12 @@ function renderOrderHistory() {
         ${order.items.map(item => `${item.name} x${item.qty}`).join(', ')}
       </div>
       <div class="order-breakdown">
-        <div>Subtotal: $${order.subtotal.toFixed(2)}</div>
-        ${order.discount > 0 ? `<div>Discount: -$${order.discount.toFixed(2)}</div>` : ''}
-        <div>Shipping: ${order.shipping === 0 ? 'FREE' : '$' + order.shipping.toFixed(2)}</div>
-        <div>Tax: $${order.tax.toFixed(2)}</div>
+        <div>Subtotal: ${formatPrice(order.subtotal)}</div>
+        ${order.discount > 0 ? `<div>Discount: -${formatPrice(order.discount)}</div>` : ''}
+        <div>Shipping: ${order.shipping === 0 ? 'FREE' : formatPrice(order.shipping)}</div>
+        <div>VAT: ${formatPrice(order.tax)}</div>
       </div>
-      <div class="order-total">Total: $${order.total.toFixed(2)}</div>
+      <div class="order-total">Total: ${formatPrice(order.total)}</div>
       <button onclick="reorderItems(${orderHistory.length - index - 1})" class="reorder-btn">Reorder</button>
     `;
     historyDiv.appendChild(orderDiv);
