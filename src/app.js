@@ -47,7 +47,12 @@ function saveToStorage() {
 
 function showNotification(message, type = 'info') {
   if (!userPreferences.notifications) return;
-  
+
+  const bg =
+    type === 'success' ? '#2f7d59' :     // green
+    type === 'error'   ? '#b23a3a' :     // red (semantic)
+                        '#2f5d50';       // neutral moss (info)
+
   const notification = document.createElement('div');
   notification.className = `notification ${type}`;
   notification.textContent = message;
@@ -55,18 +60,15 @@ function showNotification(message, type = 'info') {
     position: fixed;
     top: 20px;
     right: 20px;
-    background: ${type === 'success' ? '#059669' : type === 'error' ? '#dc2626' : '#ec4899'};
-    color: white;
+    background: ${bg};
+    color: #fff;
     padding: 1em;
     border-radius: 4px;
     z-index: 1000;
-    animation: slideIn 0.3s ease;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
   `;
-  
   document.body.appendChild(notification);
-  setTimeout(() => {
-    notification.remove();
-  }, 3000);
+  setTimeout(() => notification.remove(), 3000);
 }
 
 function getStarRating(rating) {
