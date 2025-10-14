@@ -1,59 +1,157 @@
 const products = [
-  { id: 1, name: 'Apples', price: 1.5, category: 'Fruits', stock: 15 },
-  { id: 2, name: 'Bananas', price: 1.2, category: 'Fruits', stock: 20 },
-  { id: 3, name: 'Carrots', price: 0.9, category: 'Vegetables', stock: 12 },
-  { id: 4, name: 'Bread', price: 2.5, category: 'Bakery', stock: 8 },
-  { id: 5, name: 'Milk', price: 1.8, category: 'Dairy', stock: 10 },
-  { id: 6, name: 'Oranges', price: 2.0, category: 'Fruits', stock: 18 },
-  { id: 7, name: 'Broccoli', price: 1.6, category: 'Vegetables', stock: 14 },
-  { id: 8, name: 'Cheese', price: 3.5, category: 'Dairy', stock: 6 },
-  { id: 9, name: 'Croissants', price: 4.0, category: 'Bakery', stock: 5 }
+  { id: 1, name: 'Apples', price: 1.5, category: 'Fruits', stock: 15, description: 'Fresh red apples', rating: 4.5, reviews: 23 },
+  { id: 2, name: 'Bananas', price: 1.2, category: 'Fruits', stock: 20, description: 'Ripe yellow bananas', rating: 4.2, reviews: 18 },
+  { id: 3, name: 'Carrots', price: 0.9, category: 'Vegetables', stock: 12, description: 'Organic carrots', rating: 4.0, reviews: 15 },
+  { id: 4, name: 'Bread', price: 2.5, category: 'Bakery', stock: 8, description: 'Whole wheat bread', rating: 4.3, reviews: 31 },
+  { id: 5, name: 'Milk', price: 1.8, category: 'Dairy', stock: 10, description: 'Fresh whole milk', rating: 4.4, reviews: 27 },
+  { id: 6, name: 'Oranges', price: 2.0, category: 'Fruits', stock: 18, description: 'Juicy oranges', rating: 4.1, reviews: 12 },
+  { id: 7, name: 'Broccoli', price: 1.6, category: 'Vegetables', stock: 14, description: 'Fresh broccoli', rating: 3.9, reviews: 8 },
+  { id: 8, name: 'Cheese', price: 3.5, category: 'Dairy', stock: 6, description: 'Sharp cheddar cheese', rating: 4.6, reviews: 42 },
+  { id: 9, name: 'Croissants', price: 4.0, category: 'Bakery', stock: 5, description: 'Buttery croissants', rating: 4.7, reviews: 35 },
+  { id: 10, name: 'Strawberries', price: 3.2, category: 'Fruits', stock: 9, description: 'Sweet strawberries', rating: 4.5, reviews: 19 },
+  { id: 11, name: 'Yogurt', price: 1.1, category: 'Dairy', stock: 16, description: 'Greek yogurt', rating: 4.2, reviews: 22 },
+  { id: 12, name: 'Lettuce', price: 1.3, category: 'Vegetables', stock: 11, description: 'Crisp lettuce', rating: 3.8, reviews: 9 }
 ];
 
 let cart = JSON.parse(localStorage.getItem('groceryCart')) || [];
 let orderHistory = JSON.parse(localStorage.getItem('orderHistory')) || [];
+let wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
 let currentCategory = 'All';
 let searchTerm = '';
+let sortBy = 'name';
+let showOnlyInStock = false;
 
-// Discount codes
+// Discount codes with expiry dates
 const discountCodes = {
-  'SAVE10': 0.10,
-  'WELCOME': 0.15,
-  'FRUIT20': 0.20
+  'SAVE10': { discount: 0.10, expiry: '2025-12-31', minOrder: 0 },
+  'WELCOME': { discount: 0.15, expiry: '2025-11-30', minOrder: 10 },
+  'FRUIT20': { discount: 0.20, expiry: '2025-10-31', minOrder: 15 },
+  'BULK25': { discount: 0.25, expiry: '2025-12-25', minOrder: 50 }
 };
 
 let appliedDiscount = 0;
+let currentDiscountCode = '';
 
-function saveCartToStorage() {
+// User preferences
+let userPreferences = JSON.parse(localStorage.getItem('userPreferences')) || {
+  currency: 'USD',
+  theme: 'pink',
+  notifications: true
+};
+
+function saveToStorage() {
   localStorage.setItem('groceryCart', JSON.stringify(cart));
+  localStorage.setItem('wishlist', JSON.stringify(wishlist));
+  localStorage.setItem('userPreferences', JSON.stringify(userPreferences));
+}
+
+function showNotification(message, type = 'info') {
+  if (!userPreferences.notifications) return;
+  
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${type === 'success' ? '#059669' : type === 'error' ? '#dc2626' : '#ec4899'};
+    color: white;
+    padding: 1em;
+    border-radius: 4px;
+    z-index: 1000;
+    animation: slideIn 0.3s ease;
+  `;
+  
+  document.body.appendChild(notification);
+  setTimeout(() => {
+    notification.remove();
+  }, 3000);
+}
+
+function getStarRating(rating) {
+  const stars = Math.round(rating * 2) / 2;
+  let starHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    if (i <= stars) {
+      starHTML += '★';
+    } else if (i - 0.5 <= stars) {
+      starHTML += '☆';
+    } else {
+      starHTML += '☆';
+    }
+  }
+  return starHTML;
+}
+
+function sortProducts(products) {
+  return products.sort((a, b) => {
+    switch (sortBy) {
+      case 'price-low':
+        return a.price - b.price;
+      case 'price-high':
+        return b.price - a.price;
+      case 'rating':
+        return b.rating - a.rating;
+      case 'popularity':
+        return b.reviews - a.reviews;
+      default:
+        return a.name.localeCompare(b.name);
+    }
+  });
 }
 
 function renderCatalog() {
   const catalog = document.getElementById('catalog');
   catalog.innerHTML = '';
   
-  // Filter products by category and search term
+  // Filter and sort products
   let filteredProducts = products.filter(product => {
     const matchesCategory = currentCategory === 'All' || product.category === currentCategory;
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStock = !showOnlyInStock || product.stock > 0;
+    return matchesCategory && matchesSearch && matchesStock;
   });
+
+  filteredProducts = sortProducts(filteredProducts);
+
+  if (filteredProducts.length === 0) {
+    catalog.innerHTML = '<p style="text-align: center; color: #6b7280;">No products found matching your criteria.</p>';
+    return;
+  }
 
   filteredProducts.forEach(product => {
     const div = document.createElement('div');
     div.className = 'product';
     const isOutOfStock = product.stock === 0;
+    const isInWishlist = wishlist.some(item => item.id === product.id);
     
     div.innerHTML = `
       <div class="product-info">
-        <span class="product-name">${product.name}</span>
+        <div class="product-header">
+          <span class="product-name">${product.name}</span>
+          <button class="wishlist-btn ${isInWishlist ? 'active' : ''}" onclick="toggleWishlist(${product.id})" title="${isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}">
+            ${isInWishlist ? '❤️' : '🤍'}
+          </button>
+        </div>
         <span class="product-category">${product.category}</span>
+        <span class="product-description">${product.description}</span>
+        <div class="product-rating">
+          <span class="stars">${getStarRating(product.rating)}</span>
+          <span class="rating-text">${product.rating} (${product.reviews} reviews)</span>
+        </div>
         <span class="product-price">$${product.price.toFixed(2)}</span>
-        <span class="product-stock">Stock: ${product.stock}</span>
+        <span class="product-stock ${product.stock <= 5 ? 'low-stock' : ''}">
+          Stock: ${product.stock} ${product.stock <= 5 && product.stock > 0 ? '⚠️' : ''}
+        </span>
       </div>
-      <button onclick="addToCart(${product.id})" ${isOutOfStock ? 'disabled' : ''}>
-        ${isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
-      </button>
+      <div class="product-actions">
+        <button onclick="addToCart(${product.id})" ${isOutOfStock ? 'disabled' : ''}>
+          ${isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
+        </button>
+        <button onclick="quickView(${product.id})" class="quick-view-btn">Quick View</button>
+      </div>
     `;
     
     if (isOutOfStock) {
@@ -62,6 +160,28 @@ function renderCatalog() {
     
     catalog.appendChild(div);
   });
+}
+
+function renderFilters() {
+  const filtersDiv = document.getElementById('filters');
+  filtersDiv.innerHTML = `
+    <div class="filter-group">
+      <label>Sort by:</label>
+      <select id="sortSelect" onchange="updateSort()">
+        <option value="name" ${sortBy === 'name' ? 'selected' : ''}>Name</option>
+        <option value="price-low" ${sortBy === 'price-low' ? 'selected' : ''}>Price: Low to High</option>
+        <option value="price-high" ${sortBy === 'price-high' ? 'selected' : ''}>Price: High to Low</option>
+        <option value="rating" ${sortBy === 'rating' ? 'selected' : ''}>Highest Rated</option>
+        <option value="popularity" ${sortBy === 'popularity' ? 'selected' : ''}>Most Popular</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>
+        <input type="checkbox" ${showOnlyInStock ? 'checked' : ''} onchange="toggleStockFilter()">
+        In Stock Only
+      </label>
+    </div>
+  `;
 }
 
 function renderCart() {
@@ -73,12 +193,20 @@ function renderCart() {
     return;
   }
 
+  // Cart statistics
+  const itemCount = cart.reduce((sum, item) => sum + item.qty, 0);
+  const statsDiv = document.createElement('div');
+  statsDiv.className = 'cart-stats';
+  statsDiv.innerHTML = `<p><strong>${itemCount} item${itemCount !== 1 ? 's' : ''} in cart</strong></p>`;
+  cartDiv.appendChild(statsDiv);
+
   cart.forEach(item => {
     const div = document.createElement('div');
     div.className = 'cart-item';
     div.innerHTML = `
       <div class="cart-item-info">
         <span class="item-name">${item.name}</span>
+        <span class="item-description">${item.description}</span>
         <span class="item-price">$${item.price.toFixed(2)} each</span>
       </div>
       <div class="quantity-controls">
@@ -89,34 +217,66 @@ function renderCart() {
       <div class="item-total">
         <span>$${(item.price * item.qty).toFixed(2)}</span>
         <button class="remove" onclick="removeFromCart(${item.id})">Remove</button>
+        <button class="move-to-wishlist" onclick="moveToWishlist(${item.id})">♡ Wishlist</button>
       </div>
     `;
     cartDiv.appendChild(div);
   });
 
-  // Cart summary
+  // Cart summary with enhanced features
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   const discountAmount = subtotal * appliedDiscount;
-  const total = subtotal - discountAmount;
+  const shipping = subtotal >= 25 ? 0 : 4.99;
+  const tax = (subtotal - discountAmount) * 0.08;
+  const total = subtotal - discountAmount + shipping + tax;
   
   const summaryDiv = document.createElement('div');
   summaryDiv.className = 'cart-summary';
   summaryDiv.innerHTML = `
     <div class="discount-section">
-      <input type="text" id="discountCode" placeholder="Enter discount code">
+      <input type="text" id="discountCode" placeholder="Enter discount code" value="${currentDiscountCode}">
       <button onclick="applyDiscount()">Apply</button>
+      ${appliedDiscount > 0 ? `<button onclick="removeDiscount()" class="remove-discount">Remove</button>` : ''}
+    </div>
+    <div class="available-codes">
+      <small>Available codes: SAVE10, WELCOME, FRUIT20, BULK25</small>
     </div>
     <div class="totals">
       <div class="subtotal">Subtotal: $${subtotal.toFixed(2)}</div>
-      ${appliedDiscount > 0 ? `<div class="discount">Discount (${(appliedDiscount * 100).toFixed(0)}%): -$${discountAmount.toFixed(2)}</div>` : ''}
+      ${appliedDiscount > 0 ? `<div class="discount">Discount (${currentDiscountCode}): -$${discountAmount.toFixed(2)}</div>` : ''}
+      <div class="shipping">Shipping: ${shipping === 0 ? 'FREE' : '$' + shipping.toFixed(2)} ${subtotal < 25 ? '(Free over $25)' : ''}</div>
+      <div class="tax">Tax (8%): $${tax.toFixed(2)}</div>
       <div class="total"><strong>Total: $${total.toFixed(2)}</strong></div>
     </div>
     <div class="cart-actions">
+      <button onclick="saveForLater()" class="save-btn">Save for Later</button>
       <button onclick="clearCart()" class="clear-btn">Clear Cart</button>
-      <button onclick="checkout()" class="checkout-btn">Checkout</button>
+      <button onclick="checkout()" class="checkout-btn">Checkout ($${total.toFixed(2)})</button>
     </div>
   `;
   cartDiv.appendChild(summaryDiv);
+}
+
+function renderWishlist() {
+  const wishlistDiv = document.getElementById('wishlist');
+  if (wishlist.length === 0) {
+    wishlistDiv.innerHTML = '<h3>Wishlist</h3><p>Your wishlist is empty.</p>';
+    return;
+  }
+
+  wishlistDiv.innerHTML = '<h3>Wishlist (' + wishlist.length + ' items)</h3>';
+  wishlist.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'wishlist-item';
+    div.innerHTML = `
+      <span>${item.name} - $${item.price.toFixed(2)}</span>
+      <div>
+        <button onclick="moveToCart(${item.id})">Add to Cart</button>
+        <button onclick="removeFromWishlist(${item.id})" class="remove">Remove</button>
+      </div>
+    `;
+    wishlistDiv.appendChild(div);
+  });
 }
 
 function renderCategories() {
@@ -125,72 +285,209 @@ function renderCategories() {
   
   categoriesDiv.innerHTML = '';
   categories.forEach(category => {
+    const count = category === 'All' ? products.length : products.filter(p => p.category === category).length;
     const button = document.createElement('button');
-    button.textContent = category;
+    button.textContent = `${category} (${count})`;
     button.className = `category-btn ${category === currentCategory ? 'active' : ''}`;
     button.onclick = () => filterByCategory(category);
     categoriesDiv.appendChild(button);
   });
 }
 
-function renderOrderHistory() {
-  const historyDiv = document.getElementById('orderHistory');
-  if (orderHistory.length === 0) {
-    historyDiv.innerHTML = '<p>No order history yet.</p>';
-    return;
-  }
-
-  historyDiv.innerHTML = '<h3>Order History</h3>';
-  orderHistory.forEach((order, index) => {
-    const orderDiv = document.createElement('div');
-    orderDiv.className = 'order-item';
-    orderDiv.innerHTML = `
-      <div class="order-header">
-        <strong>Order #${index + 1}</strong>
-        <span>${new Date(order.date).toLocaleDateString()}</span>
+// Quick view modal
+function quickView(id) {
+  const product = products.find(p => p.id === id);
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <h2>${product.name}</h2>
+      <p class="category">${product.category}</p>
+      <p class="description">${product.description}</p>
+      <div class="rating">
+        <span class="stars">${getStarRating(product.rating)}</span>
+        <span>${product.rating} (${product.reviews} reviews)</span>
       </div>
-      <div class="order-items">
-        ${order.items.map(item => `${item.name} x${item.qty}`).join(', ')}
+      <p class="price">$${product.price.toFixed(2)}</p>
+      <p class="stock">Stock: ${product.stock}</p>
+      <div class="modal-actions">
+        <button onclick="addToCart(${product.id}); closeModal()">Add to Cart</button>
+        <button onclick="toggleWishlist(${product.id}); closeModal()">Add to Wishlist</button>
       </div>
-      <div class="order-total">Total: $${order.total.toFixed(2)}</div>
-    `;
-    historyDiv.appendChild(orderDiv);
-  });
+    </div>
+  `;
+  document.body.appendChild(modal);
 }
 
-// Event handlers
+function closeModal() {
+  const modal = document.querySelector('.modal');
+  if (modal) modal.remove();
+}
+
+// Enhanced event handlers
 window.addToCart = function(id) {
   const product = products.find(p => p.id === id);
-  if (product.stock === 0) return;
+  if (product.stock === 0) {
+    showNotification('Product is out of stock!', 'error');
+    return;
+  }
   
   const cartItem = cart.find(item => item.id === id);
   if (cartItem) {
     if (cartItem.qty < product.stock) {
       cartItem.qty++;
+      showNotification(`${product.name} quantity increased!`, 'success');
     } else {
-      alert('Not enough stock available!');
+      showNotification('Not enough stock available!', 'error');
       return;
     }
   } else {
     cart.push({ ...product, qty: 1 });
+    showNotification(`${product.name} added to cart!`, 'success');
   }
   
   product.stock--;
-  saveCartToStorage();
+  saveToStorage();
   renderCart();
+  renderCatalog();
+  updateCartBadge();
+};
+
+window.toggleWishlist = function(id) {
+  const product = products.find(p => p.id === id);
+  const existingIndex = wishlist.findIndex(item => item.id === id);
+  
+  if (existingIndex > -1) {
+    wishlist.splice(existingIndex, 1);
+    showNotification(`${product.name} removed from wishlist!`, 'info');
+  } else {
+    wishlist.push(product);
+    showNotification(`${product.name} added to wishlist!`, 'success');
+  }
+  
+  saveToStorage();
+  renderWishlist();
   renderCatalog();
 };
 
+window.moveToCart = function(id) {
+  const wishlistItem = wishlist.find(item => item.id === id);
+  if (wishlistItem) {
+    addToCart(id);
+    removeFromWishlist(id);
+  }
+};
+
+window.moveToWishlist = function(id) {
+  const cartItem = cart.find(item => item.id === id);
+  if (cartItem) {
+    toggleWishlist(id);
+    removeFromCart(id);
+  }
+};
+
+window.removeFromWishlist = function(id) {
+  wishlist = wishlist.filter(item => item.id !== id);
+  saveToStorage();
+  renderWishlist();
+  renderCatalog();
+};
+
+window.updateSort = function() {
+  sortBy = document.getElementById('sortSelect').value;
+  renderCatalog();
+};
+
+window.toggleStockFilter = function() {
+  showOnlyInStock = !showOnlyInStock;
+  renderCatalog();
+};
+
+window.applyDiscount = function() {
+  const code = document.getElementById('discountCode').value.toUpperCase();
+  const discountInfo = discountCodes[code];
+  
+  if (!discountInfo) {
+    showNotification('Invalid discount code!', 'error');
+    return;
+  }
+  
+  const today = new Date();
+  const expiryDate = new Date(discountInfo.expiry);
+  
+  if (today > expiryDate) {
+    showNotification('Discount code has expired!', 'error');
+    return;
+  }
+  
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  
+  if (subtotal < discountInfo.minOrder) {
+    showNotification(`Minimum order of $${discountInfo.minOrder} required for this code!`, 'error');
+    return;
+  }
+  
+  appliedDiscount = discountInfo.discount;
+  currentDiscountCode = code;
+  showNotification(`Discount code "${code}" applied! ${(appliedDiscount * 100).toFixed(0)}% off`, 'success');
+  renderCart();
+};
+
+window.removeDiscount = function() {
+  appliedDiscount = 0;
+  currentDiscountCode = '';
+  document.getElementById('discountCode').value = '';
+  showNotification('Discount removed!', 'info');
+  renderCart();
+};
+
+window.saveForLater = function() {
+  const saved = JSON.parse(localStorage.getItem('savedCarts')) || [];
+  const cartToSave = {
+    items: [...cart],
+    date: new Date().toISOString(),
+    total: cart.reduce((sum, item) => sum + item.price * item.qty, 0)
+  };
+  saved.push(cartToSave);
+  localStorage.setItem('savedCarts', JSON.stringify(saved));
+  showNotification('Cart saved for later!', 'success');
+};
+
+function updateCartBadge() {
+  const badge = document.getElementById('cartBadge');
+  const itemCount = cart.reduce((sum, item) => sum + item.qty, 0);
+  badge.textContent = itemCount;
+  badge.style.display = itemCount > 0 ? 'block' : 'none';
+}
+
+// Initialize enhanced app
+document.addEventListener('DOMContentLoaded', function() {
+  renderFilters();
+  renderCategories();
+  renderCatalog();
+  renderCart();
+  renderWishlist();
+  updateCartBadge();
+  
+  // Add cart badge to header
+  const header = document.querySelector('h1');
+  header.innerHTML = `🛒 Grocery Store <span id="cartBadge" class="cart-badge">0</span>`;
+});
+
+// Keep existing functions
 window.removeFromCart = function(id) {
   const cartItem = cart.find(item => item.id === id);
   if (cartItem) {
     const product = products.find(p => p.id === id);
     product.stock += cartItem.qty;
+    showNotification(`${cartItem.name} removed from cart!`, 'info');
   }
   cart = cart.filter(item => item.id !== id);
-  saveCartToStorage();
+  saveToStorage();
   renderCart();
   renderCatalog();
+  updateCartBadge();
 };
 
 window.increaseQuantity = function(id) {
@@ -200,11 +497,12 @@ window.increaseQuantity = function(id) {
   if (cartItem && product.stock > 0) {
     cartItem.qty++;
     product.stock--;
-    saveCartToStorage();
+    saveToStorage();
     renderCart();
     renderCatalog();
+    updateCartBadge();
   } else {
-    alert('Not enough stock available!');
+    showNotification('Not enough stock available!', 'error');
   }
 };
 
@@ -215,15 +513,15 @@ window.decreaseQuantity = function(id) {
   if (cartItem && cartItem.qty > 1) {
     cartItem.qty--;
     product.stock++;
-    saveCartToStorage();
+    saveToStorage();
     renderCart();
     renderCatalog();
+    updateCartBadge();
   }
 };
 
 window.clearCart = function() {
   if (confirm('Are you sure you want to clear your cart?')) {
-    // Restore stock
     cart.forEach(item => {
       const product = products.find(p => p.id === item.id);
       product.stock += item.qty;
@@ -231,49 +529,50 @@ window.clearCart = function() {
     
     cart = [];
     appliedDiscount = 0;
-    saveCartToStorage();
+    currentDiscountCode = '';
+    saveToStorage();
     renderCart();
     renderCatalog();
-  }
-};
-
-window.applyDiscount = function() {
-  const code = document.getElementById('discountCode').value.toUpperCase();
-  if (discountCodes[code]) {
-    appliedDiscount = discountCodes[code];
-    alert(`Discount code "${code}" applied! ${(appliedDiscount * 100).toFixed(0)}% off`);
-    renderCart();
-  } else {
-    alert('Invalid discount code!');
+    updateCartBadge();
+    showNotification('Cart cleared!', 'info');
   }
 };
 
 window.checkout = function() {
   if (cart.length === 0) {
-    alert('Your cart is empty!');
+    showNotification('Your cart is empty!', 'error');
     return;
   }
   
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const total = subtotal - (subtotal * appliedDiscount);
+  const discountAmount = subtotal * appliedDiscount;
+  const shipping = subtotal >= 25 ? 0 : 4.99;
+  const tax = (subtotal - discountAmount) * 0.08;
+  const total = subtotal - discountAmount + shipping + tax;
   
   const order = {
     items: [...cart],
+    subtotal: subtotal,
+    discount: discountAmount,
+    shipping: shipping,
+    tax: tax,
     total: total,
     date: new Date().toISOString(),
-    discount: appliedDiscount
+    discountCode: currentDiscountCode
   };
   
   orderHistory.push(order);
   localStorage.setItem('orderHistory', JSON.stringify(orderHistory));
   
-  alert(`Order placed successfully! Total: $${total.toFixed(2)}`);
+  showNotification(`Order placed successfully! Total: $${total.toFixed(2)}`, 'success');
   
   cart = [];
   appliedDiscount = 0;
-  saveCartToStorage();
+  currentDiscountCode = '';
+  saveToStorage();
   renderCart();
   renderOrderHistory();
+  updateCartBadge();
 };
 
 window.filterByCategory = function(category) {
@@ -287,10 +586,63 @@ window.searchProducts = function() {
   renderCatalog();
 };
 
-// Initialize the app
-document.addEventListener('DOMContentLoaded', function() {
-  renderCategories();
-  renderCatalog();
-  renderCart();
-  renderOrderHistory();
-});
+function renderOrderHistory() {
+  const historyDiv = document.getElementById('orderHistory');
+  if (orderHistory.length === 0) {
+    historyDiv.innerHTML = '<h3>Order History</h3><p>No order history yet.</p>';
+    return;
+  }
+
+  historyDiv.innerHTML = '<h3>Order History</h3>';
+  orderHistory.slice().reverse().forEach((order, index) => {
+    const orderDiv = document.createElement('div');
+    orderDiv.className = 'order-item';
+    orderDiv.innerHTML = `
+      <div class="order-header">
+        <strong>Order #${orderHistory.length - index}</strong>
+        <span>${new Date(order.date).toLocaleDateString()}</span>
+      </div>
+      <div class="order-items">
+        ${order.items.map(item => `${item.name} x${item.qty}`).join(', ')}
+      </div>
+      <div class="order-breakdown">
+        <div>Subtotal: $${order.subtotal.toFixed(2)}</div>
+        ${order.discount > 0 ? `<div>Discount: -$${order.discount.toFixed(2)}</div>` : ''}
+        <div>Shipping: ${order.shipping === 0 ? 'FREE' : '$' + order.shipping.toFixed(2)}</div>
+        <div>Tax: $${order.tax.toFixed(2)}</div>
+      </div>
+      <div class="order-total">Total: $${order.total.toFixed(2)}</div>
+      <button onclick="reorderItems(${orderHistory.length - index - 1})" class="reorder-btn">Reorder</button>
+    `;
+    historyDiv.appendChild(orderDiv);
+  });
+}
+
+window.reorderItems = function(orderIndex) {
+  const order = orderHistory[orderIndex];
+  let addedItems = 0;
+  
+  order.items.forEach(orderItem => {
+    const product = products.find(p => p.id === orderItem.id);
+    if (product && product.stock >= orderItem.qty) {
+      const cartItem = cart.find(item => item.id === orderItem.id);
+      if (cartItem) {
+        cartItem.qty += orderItem.qty;
+      } else {
+        cart.push({ ...orderItem });
+      }
+      product.stock -= orderItem.qty;
+      addedItems++;
+    }
+  });
+  
+  if (addedItems > 0) {
+    saveToStorage();
+    renderCart();
+    renderCatalog();
+    updateCartBadge();
+    showNotification(`${addedItems} items reordered successfully!`, 'success');
+  } else {
+    showNotification('Some items are no longer available!', 'error');
+  }
+};
